@@ -1,0 +1,6 @@
+[package]
+name = "lisp_compiler"
+version = "0.1.0"
+authors = ["William Hatch <whatch@rentpath.com>"]
+[dependencies.nom]
+path = "/users/whatch/source/rust_stuff/nom"
