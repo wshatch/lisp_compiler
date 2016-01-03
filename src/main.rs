@@ -1,11 +1,12 @@
 #[macro_use]
 extern crate nom;
 
+mod nom_parse_funcs;
+mod operations;
+mod ast;
 use std::io;
 use std::io::Write;
 use std::process;
-//mod parse_funcs;
-mod nom_parse_funcs;
 
 fn main(){
   loop {
