@@ -1,26 +1,7 @@
 #![allow(dead_code)]
 use nom::{digit, multispace};
 use std::rc::Rc;
-
-#[derive(PartialEq, Debug)]
-pub enum Token{
-  Number(i32),
-  Func(fn(Vec<LispyVal>) -> LispyRet),
-  BeginSexpr,
-  EndSexpr,
-  List(Vec<LispyVal>),
-  Error(String)
-}
-
-#[derive(PartialEq, Debug)]
-pub enum LispyError{
-  ErrString(String),
-  ErrLispyVal(LispyVal)
-}
-
-//TODO: figure out if this is actually needed
-pub type LispyVal = Rc<Token>;
-pub type LispyRet = Result<LispyVal, LispyError>;
+use token::{Token, LispyVal, LispyRet};
 
 /*
    number     : [0-9]
@@ -31,11 +12,9 @@ pub type LispyRet = Result<LispyVal, LispyError>;
    sexpr      : '(' <expr> * ')'
    qexpr      : '"' <expr> * '"' //TODO: replace this with a lispier macro language
 */
-
-/*
 named!(pub tokenize< Vec<Token> >, 
   many0!( 
-      alt!(operator | number | tokenize_comparator | tokenize_beginsexpr | tokenize_endsexpr)
+      alt!(operator | number | tokenize_beginsexpr | tokenize_endsexpr)
   )
 );
 
@@ -43,7 +22,7 @@ named!(pub operator<&[u8], Token>,  chain!(
     opt!(multispace) ~
     val: alt!(tag!("+") | tag!("-") | tag!("/") | tag!("*")),
     || {
-      Token::Operator(val)
+      Token::build_operator(val)
     }
 ));
 
@@ -51,15 +30,7 @@ named!(pub number<&[u8], Token>, chain!(
     opt!(multispace) ~
     val: digit,
     || {
-      Token::Number(val)
-    }
-));
-
-named!(pub tokenize_comparator<&[u8], Token>, chain!(
-    opt!(multispace) ~
-    val: comparator,
-    || {
-      Token::Comparator(val)
+      Token::build_number(val)
     }
 ));
 
@@ -79,25 +50,34 @@ named!(pub tokenize_endsexpr<&[u8], Token>, chain!(
     }
 ));
 
+/*
+named!(pub tokenize_comparator<&[u8], Token>, chain!(
+    opt!(multispace) ~
+    val: comparator,
+    || {
+      Token::Comparator(val)
+    }
+));
+
 
 named!(pub terminal, alt!(digit | operation | comparator | multispace));
 named!(pub operation, alt!(tag!("+") | tag!("-") | tag!("*") | tag!("/")));
 named!(pub comparator, alt!(tag!("<") | tag!(">") | tag!("==") | tag!("<=") | tag!(">=") | tag!("&") | tag!("|")));
 named!(string, delimited!(char!('"'), is_not!("\""), char!('"')));
-
+*/
 #[cfg(test)]
 mod test{
-    use super::*; 
     use nom::IResult;
     use nom::IResult::*;
+    use token::Token;
 
+/*
     #[test]
     fn token_operator(){
       let subject = operator(&b"+ 12"[..]);
       let expectation = IResult::Done(&b" 12"[..], Token::Operator(&b"+"[..]));
       assert_eq!(subject, expectation);
     }
-
     #[test]
     fn token_number(){
       let subject = number(&b"12 34"[..]);
@@ -136,6 +116,6 @@ mod test{
                              ];
       assert_eq!(subject, IResult::Done(&b""[..], expectation));
     }
+*/
 
 }
-*/

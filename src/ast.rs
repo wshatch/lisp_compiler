@@ -1,5 +1,6 @@
 #![allow(dead_code)]
-use nom_parse_funcs::{Token, LispyVal, LispyRet};
+use token::{Token, LispyVal, LispyRet, LispyError};
+use operations::{identity};
 use std::slice::Iter;
 use std::{str};
 use std::rc::Rc;
@@ -31,11 +32,32 @@ impl Ast {
   }
 
   pub fn eval(&self) -> LispyRet{
-    let func = match *self.contents{
-      Token::Func(a) => a,
+    match *self.contents {
+      Token::BeginSexpr => return self.eval_sexpr(),
+      Token::Func(a) => return self.eval_func(),
       _ => return Ok(self.contents.clone())
     };
+  }
 
+  fn eval_sexpr(&self) -> LispyRet{
+    let (first, rest) = self.children.split_first().unwrap();
+    let identity_ptr = identity as fn(Vec<LispyVal>) -> LispyRet;
+
+    let func = match *first.contents {
+      Token::Func(a) => a,
+      _ => identity_ptr
+    };
+
+    let evald_children = rest.iter().map(|x| x.eval().unwrap()).collect::<Vec<_>>();
+
+    return func(evald_children);
+  }
+
+  fn eval_func(&self) -> LispyRet{
+    let func = match *self.contents {
+      Token::Func(a) => a,
+      _ => return Err(LispyError::ErrString("Tried to evaluate a non function".to_string()))
+    };
     let evaled_children = self.children.iter().map(|x| x.eval().unwrap()).collect::<Vec<_>>();
     return func(evaled_children);
   }
@@ -73,12 +95,6 @@ impl Ast {
 
 
   fn build_number(input: i32) -> Ast{
-    /*
-      let value :i32  = match str::from_utf8(input){
-        Ok(n) => n.parse().unwrap(),
-        Err(e) => panic!("Tried to create a number for a non int value {:?}", e)
-      };
-      */
       return Ast::new("number", 
                       Token::Number(input), 
                       vec![])
@@ -94,71 +110,99 @@ impl Ast {
 #[cfg(test)]
 mod test{
   use super::*;
-  use nom_parse_funcs::{Token};
+  use token::{Token};
+  use std::rc::Rc;
 
-/*  #[test]
+  #[test]
   fn test_ast_from_token_vec(){
     // Test case for (+ 1 2 3)
     let expectation = Ast {tags:"sexpr".to_string(),
-                           contents: Type::Nil,
+                           contents: Rc::new(Token::BeginSexpr),
                            children: vec![
                               Ast {tags: "number".to_string(),
-                                  contents: Type::Number(1),
+                                  contents: Rc::new(Token::Number(1)),
                                   children: vec![]
                               },
                               Ast {tags: "number".to_string(),
-                                  contents: Type::Number(2),
+                                  contents: Rc::new(Token::Number(2)),
                                   children: vec![]
                               },
                               Ast {tags: "number".to_string(),
-                                  contents: Type::Number(3),
+                                  contents: Rc::new(Token::Number(3)),
                                   children: vec![]
                               }
                           ]};
-    let subject_args = vec![Token::BeginSexpr(&b"("[..]), 
-                            Token::Number(&b"1"[..]), 
-                            Token::Number(&b"2"[..]), 
-                            Token::Number(&b"3"[..]), 
-                            Token::EndSexpr(&b")"[..])];
+    let subject_args = vec![Token::BeginSexpr, 
+                            Token::Number(1), 
+                            Token::Number(2), 
+                            Token::Number(3), 
+                            Token::EndSexpr];
     let subject = Ast::from_token_vec(subject_args).unwrap();
     assert_eq!(subject, expectation);
+  }
+
+  #[test]
+  fn test_ast_eval(){
+    // Test case for (+ 1 2 3)
+    let subject = Ast {tags:"sexpr".to_string(),
+                           contents: Rc::new(Token::BeginSexpr),
+                           children: vec![
+                              Ast {tags: "plus".to_string(),
+                                   contents: Rc::new(Token::build_operator(&b"+"[..])),
+                                   children: vec![]
+                              },
+                              Ast {tags: "number".to_string(),
+                                  contents: Rc::new(Token::Number(1)),
+                                  children: vec![]
+                              },
+                              Ast {tags: "number".to_string(),
+                                  contents: Rc::new(Token::Number(2)),
+                                  children: vec![]
+                              },
+                              Ast {tags: "number".to_string(),
+                                  contents: Rc::new(Token::Number(3)),
+                                  children: vec![]
+                              }
+                          ]};
+    let expectation = Token::Number(6);
+    assert_eq!(subject.eval(), Ok(Rc::new(expectation)));
+
   }
 
   #[test]
   fn test_ast_from_embeded_sexpr(){
     //Test case for (+ 1 2 (3))
     let expectation = Ast {tags:"sexpr".to_string(),
-                           contents: "(".to_string(),
+                           contents: Rc::new(Token::BeginSexpr),
                            children: vec![
                               Ast {tags: "number".to_string(),
-                                  contents: "1".to_string(),
+                                  contents: Rc::new(Token::Number(1)),
                                   children: vec![]
                               },
                               Ast {tags: "number".to_string(),
-                                  contents: "2".to_string(),
+                                  contents: Rc::new(Token::Number(2)),
                                   children: vec![]
                               },
                               Ast {tags: "sexpr".to_string(),
-                                contents: "(".to_string(),
+                                contents: Rc::new(Token::BeginSexpr),
                                 children: vec![
                                   Ast {tags: "number".to_string(),
-                                    contents: "3".to_string(),
+                                    contents: Rc::new(Token::Number(3)),
                                     children: vec![]
                                   }
                                 ]
                               }
                           ]};
-    let subject_args = vec![Token::BeginSexpr(&b"("[..]), 
-                            Token::Number(&b"1"[..]), 
-                            Token::Number(&b"2"[..]), 
-                            Token::BeginSexpr(&b"("[..]),
-                            Token::Number(&b"3"[..]), 
-                            Token::EndSexpr(&b")"[..]),
-                            Token::EndSexpr(&b")"[..])];
+    let subject_args = vec![Token::BeginSexpr, 
+                            Token::Number(1), 
+                            Token::Number(2), 
+                            Token::BeginSexpr,
+                            Token::Number(3), 
+                            Token::EndSexpr,
+                            Token::EndSexpr];
 
     let subject = Ast::from_token_vec(subject_args).unwrap();
     assert_eq!(subject, expectation);
   }
-  */
 
 }

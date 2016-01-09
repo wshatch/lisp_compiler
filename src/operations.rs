@@ -1,6 +1,11 @@
 #![allow(dead_code)]
-use nom_parse_funcs::{Token, LispyVal, LispyError, LispyRet};
+use token::{Token, LispyVal, LispyError, LispyRet};
 use std::rc::Rc;
+
+pub fn identity(vector: Vec<LispyVal>) -> LispyRet{
+  let list = vector.iter().map( |x| x.clone()).collect::<Vec<_>>();
+  return Ok(Rc::new(Token::List(list)));
+}
 
 pub fn sum(vector: Vec<LispyVal>) -> LispyRet {
   fn addition_function(acc: i32, item: &LispyVal) -> i32{
@@ -47,6 +52,8 @@ fn arithmetic(vector: Vec<LispyVal>, applyFunc: fn(i32, &LispyVal)->i32) -> Lisp
     None => return Ok(Rc::new(Token::Number(0)))
   };
 
+  //TODO: validate tokens are numbers
+
   let initial_value = convert_to_int(&first);
   let result : i32 = rest.iter().fold(initial_value, applyFunc);
   return Ok(Rc::new(Token::Number(result)));
@@ -56,7 +63,7 @@ fn arithmetic(vector: Vec<LispyVal>, applyFunc: fn(i32, &LispyVal)->i32) -> Lisp
 mod test {
   use super::*;
   use std::rc::Rc;
-  use nom_parse_funcs::Token;
+  use token::Token;
 
   #[test]
   fn sum_nothing(){
