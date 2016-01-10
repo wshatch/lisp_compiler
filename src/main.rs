@@ -5,6 +5,7 @@ mod nom_parse_funcs;
 mod operations;
 mod ast;
 mod token;
+mod eval;
 use std::io;
 use std::io::Write;
 use std::process;

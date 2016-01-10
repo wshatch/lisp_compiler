@@ -67,6 +67,7 @@ impl Ast {
         Token::Number(i) => Some(Ast::build_number(i)),
         Token::BeginSexpr => Ast::build_sexpr(rest),
         Token::EndSexpr => None,
+        Token::Func(i) => Some(Ast::new("func", Token::Func(i), vec![])),
         _ => None
     }
   }
@@ -92,7 +93,6 @@ impl Ast {
     current_ast.children = children;
     return Some(current_ast);
   }
-
 
   fn build_number(input: i32) -> Ast{
       return Ast::new("number", 
