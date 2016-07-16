@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::str;
+use std::fmt;
 use operations::{sum, subtract, product, divide};
 
 #[derive(PartialEq, Debug)]
@@ -50,6 +51,16 @@ impl Token{
       Err(_)=> return Token::Error("unable to convert a string to a number".to_string())
     }
 
+  }
+}
+
+impl fmt::Display for Token {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result{
+    let token_string = match *self {
+      Token::Number(x) => x.to_string(),
+      _ => "Foo".to_string()
+    };
+    write!(f, "{}", token_string)
   }
 }
 

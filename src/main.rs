@@ -9,6 +9,7 @@ mod eval;
 use std::io;
 use std::io::Write;
 use std::process;
+use eval::{eval};
 
 fn main(){
   loop {
@@ -28,7 +29,6 @@ fn get_input() -> String {
 fn handle_input(input: &str){
   match input{
     "exit" => process::exit(0),
-    _ => println!("{}", input)
+    _ => println!("{}", eval(input.to_string()))
   }
 }
-
